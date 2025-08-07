@@ -1,0 +1,102 @@
+* {
+ margin: 0;
+ padding: 0;
+ box-sizing: border-box;
+}
+.text-right{
+ text-align: right;
+}
+.App {
+  text-align: center;
+}
+
+.home-header {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color:black;
+}
+
+.Members-section {
+  
+   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color:black;
+}
+ 
+.home-header h2 {
+  margin-bottom: 1rem;
+  color: blue;
+}
+
+.Members-section h2 {
+  margin-bottom: 1rem;
+  color: blue;
+}
+
+.Members-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.Members-section li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid black;
+}
+
+.Members-section li:last-child {
+  border-bottom: none;
+}
+.nav{
+ display: flex;
+ justify-content: space-between;
+ width: 100%;
+ height:100%;
+ padding: 20px;
+ background-color: blue;
+}
+nav .nav-left,.nav-right,#link{
+ margin:2px 20px;
+ color: whitesmoke;
+}
+nav .nav-left a{
+ font-size: 23px;
+ color: gray
+}
+nav a{
+ color:black;
+ text-decoration: none;
+ font-size: 20px;
+}
+.Button{
+ display: flex;justify-content: end;
+ margin:20px !important;
+}
+.task-container{
+
+ border:2px solid rgb(231, 212, 212);
+ margin:8px
+}
+.task-container form{
+  
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+}
+.todo {
+   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  
+}
