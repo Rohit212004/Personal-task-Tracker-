@@ -1,0 +1,28 @@
+# ======================
+# Global (All projects)
+# ======================
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+*.swo
+*.env
+
+# ======================
+# Frontend (React)
+# ======================
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/package-lock.json
+
+# ======================
+# Backend (.NET)
+# ======================
+backend/bin/
+backend/obj/
+backend/*.user
+backend/*.suo
+backend/.vs/
+backend/.env
