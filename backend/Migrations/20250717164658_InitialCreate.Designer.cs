@@ -10,7 +10,7 @@ using TaskApi.Data;
 
 namespace TaskApi.Migrations
 {
-    [DbContext(typeof(TaskDbContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     [Migration("20250717164658_InitialCreate")]
     partial class InitialCreate
     {

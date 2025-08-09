@@ -9,9 +9,8 @@ namespace TaskApi.Controllers
     [Route("api/[controller]")]
     public class TasksController : ControllerBase
     {
-        private readonly TaskDbContext _context;
-
-        public TasksController(TaskDbContext context)
+        private readonly ApplicationDbContext _context;
+        public TasksController(ApplicationDbContext context)
         {
             _context = context;
         }

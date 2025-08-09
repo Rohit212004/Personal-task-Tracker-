@@ -26,4 +26,3 @@ backend/*.user
 backend/*.suo
 backend/.vs/
 backend/.env
-.vs
