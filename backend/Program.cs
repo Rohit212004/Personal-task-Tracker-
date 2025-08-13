@@ -10,7 +10,10 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];
-var key = Encoding.ASCII.GetBytes(jwtSecret);
+var jwtKey = builder.Configuration["Jwt:Key"] 
+             ?? throw new ArgumentNullException("Jwt:Key is missing in configuration");
+
+var key = Encoding.UTF8.GetBytes(jwtKey);
 builder.Services.AddSingleton<IMyLogger, MyLogger>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -34,7 +37,12 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 // Add services
 builder.Services.AddControllers();
 builder.Services.AddDbContext<TaskDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+    )
+);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

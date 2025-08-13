@@ -3,6 +3,7 @@ import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { LogIn, Sparkles, CheckCircle } from "lucide-react";
 
 type BackendResponse = {
   success: boolean;
@@ -58,83 +59,101 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div
-  style={{
-    display: "flex",
-    height: "100vh",
-    width: "100vw",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundImage: "url('/login.jpg')", // public folder image
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-    position: "relative",
-  }}
->
-      {/* Overlay to make text more readable */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.4)",
-        backdropFilter: "blur(3px)"
-      }} />
-      
-      <div style={{ 
-        width: 360, 
-        padding: 32,
-        borderRadius: 16,
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
-        backdropFilter: "blur(10px)",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
-        position: "relative",
-        border: "1px solid rgba(255, 255, 255, 0.3)"
-      }}>
-        <h2 style={{ 
-          textAlign: "center",
-          fontSize: "28px",
-          marginBottom: "16px",
-          color: "#1a1a1a",
-          fontWeight: "600"
-        }}>Welcome Back</h2>
-        <p style={{ 
-          textAlign: "center", 
-          color: "#666",
-          marginBottom: "24px",
-          fontSize: "16px"
-        }}>Sign in with your Google account</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center p-6">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-200/20 rounded-full blur-3xl"></div>
+      </div>
 
-        <div style={{ 
-          display: "flex", 
-          justifyContent: "center", 
-          marginTop: 20 
-        }}>
-          <GoogleLogin 
-            onSuccess={handleGoogleLogin} 
-            onError={() => setError("Google Login failed")} 
-          />
+      <div className="relative z-10 w-full max-w-md">
+        {/* Welcome Card */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 mb-6">
+          {/* Header with gradient */}
+          <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-6 rounded-xl mb-6 -mx-2">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative z-10 text-center">
+              <div className="flex justify-center mb-3">
+                <div className="p-3 bg-white/20 rounded-full">
+                  <LogIn size={32} />
+                </div>
+              </div>
+              <h1 className="text-2xl font-bold mb-2">Welcome!</h1>
+              <p className="text-blue-100 text-sm">
+                Sign in to access your task management dashboard
+              </p>
+            </div>
+            
+            {/* Decorative elements */}
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+            <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+          </div>
+
+          {/* Features highlight */}
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center gap-3 p-3 bg-blue-50/50 rounded-xl">
+              <CheckCircle size={20} className="text-blue-600 flex-shrink-0" />
+              <span className="text-sm text-gray-700">Organize and prioritize your tasks</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-green-50/50 rounded-xl">
+              <CheckCircle size={20} className="text-green-600 flex-shrink-0" />
+              <span className="text-sm text-gray-700">Track progress with AI insights</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-purple-50/50 rounded-xl">
+              <CheckCircle size={20} className="text-purple-600 flex-shrink-0" />
+              <span className="text-sm text-gray-700">Get smart notifications and reminders</span>
+            </div>
+          </div>
+
+          {/* Google Login */}
+          <div className="text-center">
+            <p className="text-gray-600 mb-4 text-sm">
+              Continue with your Google account
+            </p>
+            
+            <div className="flex justify-center">
+              {loading ? (
+                <div className="flex items-center gap-2 px-6 py-3 bg-blue-50 text-blue-600 rounded-xl">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  <span className="font-medium">Signing you in...</span>
+                </div>
+              ) : (
+                <GoogleLogin 
+                  onSuccess={handleGoogleLogin} 
+                  onError={() => setError("Google Login failed")}
+                  size="large"
+                  theme="outline"
+                  shape="rectangular"
+                />
+              )}
+            </div>
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm text-center">
+                {error}
+              </div>
+            )}
+          </div>
         </div>
 
-        {loading && (
-          <p style={{ 
-            textAlign: "center", 
-            marginTop: "16px",
-            color: "#4a4a4a" 
-          }}>Processing...</p>
-        )}
-        {error && (
-          <p style={{ 
-            color: "#dc2626", 
-            marginTop: "16px",
-            textAlign: "center",
-            padding: "8px",
-            borderRadius: "4px",
-            backgroundColor: "rgba(220, 38, 38, 0.1)"
-          }}>{error}</p>
-        )}
+        {/* Thought of the day card */}
+        <div className="bg-white/60 backdrop-blur-sm p-6 rounded-xl border border-white/50 text-center">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Sparkles size={20} className="text-blue-500" />
+            <span className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+              Thought of the Day
+            </span>
+          </div>
+          <p className="text-gray-700 italic leading-relaxed">
+            "The best way to predict the future is to create it." — Peter Drucker
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-6 text-sm text-gray-500">
+          Secure authentication powered by Google
+        </div>
       </div>
     </div>
   );
