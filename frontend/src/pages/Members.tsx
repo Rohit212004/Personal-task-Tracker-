@@ -50,24 +50,24 @@ const Members = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-[#c6ffdd] via-[#fbd786] to-[#f7797d] dark:from-gray-900 dark:to-gray-800 p-6 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading team members...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-200 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading team members...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-6 pl-24">
+    <div className="min-h-screen bg-gradient-to-br from-[#c6ffdd] via-[#fbd786] to-[#f7797d] dark:from-gray-900 dark:to-gray-800 p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Team Members</h1>
-          <p className="text-gray-600 mt-1">Meet our amazing team and mentor.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Team Members</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Meet our amazing team and mentor.</p>
           {error && (
-            <div className="flex items-center gap-2 mt-2 text-amber-600 text-sm">
+            <div className="flex items-center gap-2 mt-2 text-amber-600 dark:text-amber-400 text-sm">
               <AlertCircle size={16} />
               <span>Using offline data - API connection failed</span>
             </div>
@@ -77,7 +77,7 @@ const Members = () => {
         <button 
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+          className="flex items-center gap-2 px-4 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-500 text-white rounded-xl shadow transition-all duration-200 font-medium"
         >
           <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
           Refresh
@@ -87,7 +87,7 @@ const Members = () => {
       {/* Main Content */}
       <div className="space-y-8">
         {/* Mentor Section */}
-        <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white p-8 rounded-2xl shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-900 to-gray-700 text-white p-8 rounded-2xl shadow-xl relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10">
             <div className="flex items-center gap-4 mb-6">
@@ -120,43 +120,43 @@ const Members = () => {
 
         {/* Team Statistics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+          <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl shadow border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Members</h3>
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Total Members</h3>
               <Users className="text-blue-500" size={20} />
             </div>
-            <p className="text-3xl font-bold text-gray-900">{members.length}</p>
-            <p className="text-sm text-gray-500 mt-1">active team members</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{members.length}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">active team members</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+          <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl shadow border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Colleges</h3>
+              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Colleges</h3>
               <GraduationCap className="text-green-500" size={20} />
             </div>
-            <p className="text-3xl font-bold text-gray-900">{new Set(members.map(m => m.college)).size}</p>
-            <p className="text-sm text-gray-500 mt-1">different institutions</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{new Set(members.map(m => m.college)).size}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">different institutions</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+          <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl shadow border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Team Strength</h3>
+              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Team Strength</h3>
               <Star className="text-amber-500" size={20} />
             </div>
-            <p className="text-3xl font-bold text-gray-900">A+</p>
-            <p className="text-sm text-gray-500 mt-1">diverse & talented</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">A+</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">diverse & talented</p>
           </div>
         </div>
 
         {/* Team Members Grid */}
-        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
+        <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-blue-50 rounded-lg">
               <Users className="text-blue-600" size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">Team Members</h3>
-              <p className="text-gray-500 text-sm">Our talented development team</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Team Members</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Our talented development team</p>
             </div>
           </div>
           
@@ -171,7 +171,7 @@ const Members = () => {
               {members.map((member, index) => (
                 <div
                   key={member.id}
-                  className="group bg-white/60 p-6 rounded-xl border border-gray-200 hover:border-blue-200 hover:shadow-md transition-all duration-200 hover:-translate-y-1"
+                  className="group bg-white/60 dark:bg-gray-900/60 p-6 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-md backdrop-blur-sm dark:backdrop-blur-none transition-all duration-200 hover:-translate-y-1"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
@@ -184,7 +184,7 @@ const Members = () => {
                       {member.firstName.charAt(0)}{member.lastName.charAt(0)}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors">
                         {member.firstName} {member.lastName}
                       </h4>
                       <div className="flex items-center gap-2 mt-1">

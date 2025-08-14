@@ -68,14 +68,14 @@ const AiChat: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-6 pl-24">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">AI Assistant</h1>
-          <p className="text-gray-600 mt-1">Chat with Gemini - your intelligent AI companion.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AI Assistant</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Chat with Gemini - your intelligent AI companion.</p>
           {error && (
-            <div className="flex items-center gap-2 mt-2 text-red-600 text-sm">
+            <div className="flex items-center gap-2 mt-2 text-red-600 dark:text-red-400 text-sm">
               <AlertCircle size={16} />
               <span>{error}</span>
             </div>
@@ -89,12 +89,12 @@ const AiChat: React.FC = () => {
       </div>
 
       {/* Main Chat Container */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-0">
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-8 rounded-2xl shadow-xl mb-8">
+        <div className="relative overflow-hidden bg-gradient-to-r from-gray-900 to-gray-700 text-white p-4 xs:p-5 sm:p-8 rounded-2xl shadow-xl mb-4 xs:mb-6 sm:mb-8">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <div>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-white/20 rounded-xl">
@@ -102,11 +102,11 @@ const AiChat: React.FC = () => {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold">AI Chat Assistant</h2>
-                    <p className="text-purple-100">Ask me anything - I'm here to help!</p>
+                    <p className="text-gray-200">Ask me anything - I'm here to help!</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-6 text-purple-100">
+                <div className="hidden xs:flex items-center gap-3 sm:gap-6 text-purple-100">
                   <div className="flex items-center gap-2">
                     <MessageSquare size={16} />
                     <span>Natural conversation</span>
@@ -119,7 +119,7 @@ const AiChat: React.FC = () => {
               </div>
               
               <div className="hidden sm:block">
-                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                 <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                   <Bot size={40} className="text-white" />
                 </div>
               </div>
@@ -132,39 +132,39 @@ const AiChat: React.FC = () => {
         </div>
 
         {/* Chat Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 xs:gap-4 sm:gap-6 mb-4 xs:mb-6 sm:mb-8">
+          <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl shadow border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Messages</h3>
+              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Messages</h3>
               <MessageSquare className="text-blue-500" size={20} />
             </div>
-            <p className="text-3xl font-bold text-gray-900">{chatLog.length}</p>
-            <p className="text-sm text-gray-500 mt-1">total messages</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{chatLog.length}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">total messages</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+          <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl shadow border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">AI Model</h3>
+              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">AI Model</h3>
               <Bot className="text-purple-500" size={20} />
             </div>
-            <p className="text-3xl font-bold text-gray-900">Gemini</p>
-            <p className="text-sm text-gray-500 mt-1">2.5 flash</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">Gemini</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">2.5 flash</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+          <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl shadow border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Status</h3>
+              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Status</h3>
               <Sparkles className="text-green-500" size={20} />
             </div>
-            <p className="text-3xl font-bold text-gray-900">{loading ? 'Busy' : 'Ready'}</p>
-            <p className="text-sm text-gray-500 mt-1">{ai ? 'connected' : 'offline'}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{loading ? 'Busy' : 'Ready'}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{ai ? 'connected' : 'offline'}</p>
           </div>
         </div>
 
         {/* Chat Interface */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 overflow-hidden">
+        <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm rounded-2xl shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
           {/* Chat Messages */}
-          <div className="h-96 overflow-y-auto p-6 space-y-4 bg-gradient-to-br from-gray-50/50 to-white/50">
+          <div className="h-[58vh] xs:h-[60vh] sm:h-96 overflow-y-auto p-3 xs:p-4 sm:p-6 space-y-3 xs:space-y-4 bg-gradient-to-br from-gray-50/50 to-white/50 dark:from-gray-900/50 dark:to-gray-800/50">
             {chatLog.length === 0 && !loading && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -201,21 +201,21 @@ const AiChat: React.FC = () => {
                   {msg.role === 'user' ? <User size={16} className="text-white" /> : <Bot size={16} className="text-white" />}
                 </div>
                 
-                <div className={`max-w-3xl ${msg.role === 'user' ? 'text-right' : ''}`}>
+                 <div className={`max-w-[85vw] sm:max-w-3xl ${msg.role === 'user' ? 'text-right' : ''}`}>
                   <div className={`inline-block p-4 rounded-xl shadow-sm ${
                     msg.role === 'user'
                       ? 'bg-blue-500 text-white rounded-br-sm'
-                      : 'bg-white/80 text-gray-900 border border-gray-200 rounded-bl-sm'
+                      : 'bg-white/80 text-gray-900 border border-gray-200 backdrop-bl-sm dark:backdrop-blur-none rounded-bl-sm'
                   }`}>
                     <div className="text-xs font-medium mb-2 opacity-70">
                       {msg.role === 'user' ? 'You' : 'Gemini AI'}
                     </div>
                     {msg.role === 'model' ? (
-                      <div className="prose prose-sm max-w-none text-gray-900">
+                      <div className="prose prose-sm max-w-none text-gray-900 dark:text-gray-100">
                         <ReactMarkdown>{msg.text}</ReactMarkdown>
                       </div>
                     ) : (
-                      <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                      <p className="text-sm whitespace-pre-wrap text-gray-900 dark:text-gray-100">{msg.text}</p>
                     )}
                   </div>
                 </div>
@@ -227,7 +227,7 @@ const AiChat: React.FC = () => {
                 <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-purple-500 to-indigo-600">
                   <Bot size={16} className="text-white" />
                 </div>
-                <div className="bg-white/80 p-4 rounded-xl border border-gray-200 rounded-bl-sm">
+                <div className="bg-white/80 p-4 rounded-xl border border-gray-200 backdrop-blur-sm dark:backdrop-blur-none rounded-bl-sm">
                   <div className="text-xs font-medium mb-2 opacity-70">Gemini AI</div>
                   <div className="flex items-center gap-2 text-gray-500">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
@@ -241,8 +241,8 @@ const AiChat: React.FC = () => {
           </div>
 
           {/* Input Area */}
-          <div className="p-6 bg-white/60 backdrop-blur-sm border-t border-gray-200">
-            <div className="flex gap-3">
+            <div className="p-3 xs:p-4 sm:p-6 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border-t border-gray-200 dark:border-gray-800">
+            <div className="flex gap-2 sm:gap-3 items-start">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -250,13 +250,13 @@ const AiChat: React.FC = () => {
                 placeholder="Type your message here... (Press Enter to send)"
                 disabled={loading || !ai}
                 rows={1}
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none disabled:opacity-50"
-                style={{ minHeight: '48px', maxHeight: '120px' }}
+                  className="flex-1 px-3 xs:px-4 py-2.5 xs:py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-200 focus:border-transparent transition-all resize-none disabled:opacity-50 text-gray-900 dark:text-gray-100"
+                style={{ minHeight: '40px', maxHeight: '120px' }}
               />
               <button
                 onClick={sendMessage}
                 disabled={loading || !input.trim() || !ai}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium flex items-center gap-2 disabled:cursor-not-allowed"
+                  className="px-3 xs:px-4 sm:px-6 py-2.5 xs:py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-500 text-white rounded-xl shadow transition-all duration-200 font-medium flex items-center gap-2 disabled:cursor-not-allowed"
               >
                 <Send size={18} />
                 Send

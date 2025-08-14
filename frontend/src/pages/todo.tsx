@@ -1,4 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Circle, Plus, Edit2, Trash2, AlertCircle, Clock, Star, Bell } from "lucide-react";
 
 interface TodoItem {
@@ -16,6 +17,8 @@ const Todo: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [toggleSubmit, setToggleSubmit] = useState(true);
   const [isEditItem, setIsEditItem] = useState<number | null>(null);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [deleteMessage, setDeleteMessage] = useState(false);
   const [inputTitle, setInputTitle] = useState("");
   const [inputDesc, setInputDesc] = useState("");
@@ -25,15 +28,44 @@ const Todo: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+
+  // Helpers
+  const getTodayLocalISO = (): string => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const todayISO = getTodayLocalISO();
+
   // Load tasks from backend
   useEffect(() => {
     fetchTasks();
   }, []);
+  useEffect(() => {
+    const editId = searchParams.get('editId');
+    if (editId && items.length > 0) {
+      const idNum = parseInt(editId, 10);
+      const task = items.find(t => t.id === idNum);
+      if (task) {
+        setInputTitle(task.name);
+        setInputDesc(task.desc);
+        setInputDueDate(task.dueDate);
+        setInputPriority(task.priority);
+        setIsEditItem(task.id);
+        setToggleSubmit(false);
+        setShowForm(true);
+      }
+    }
+  }, [searchParams, items]);
 
   // Check for priority notifications
   useEffect(() => {
     checkNotifications();
   }, [items]);
+
+
 
   // Save to localStorage as backup
   const saveToLocalStorage = (tasks: TodoItem[]) => {
@@ -153,7 +185,15 @@ const Todo: React.FC = () => {
   // INPUT HANDLERS
   const handleInput = (e: ChangeEvent<HTMLInputElement>) => setInputTitle(e.target.value);
   const handleInputDesc = (e: ChangeEvent<HTMLInputElement>) => setInputDesc(e.target.value);
-  const handleDueDateChange = (e: ChangeEvent<HTMLInputElement>) => setInputDueDate(e.target.value);
+  const handleDueDateChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value && value < todayISO) {
+      alert('Due date cannot be in the past. It has been set to today.');
+      setInputDueDate(todayISO);
+      return;
+    }
+    setInputDueDate(value);
+  };
   const handlePriorityChange = (e: ChangeEvent<HTMLSelectElement>) => setInputPriority(e.target.value as 'low' | 'medium' | 'high' | 'urgent');
 
   // Toggle task completion
@@ -190,6 +230,10 @@ const Todo: React.FC = () => {
     e.preventDefault();
     if (!inputTitle || !inputDesc || !inputDueDate) {
       alert("Please fill all fields");
+      return;
+    }
+    if (inputDueDate < todayISO) {
+      alert('Due date cannot be in the past');
       return;
     }
 
@@ -238,6 +282,8 @@ const Todo: React.FC = () => {
         resetForm();
         alert("Task updated locally. Server sync failed.");
       }
+      // Return to dashboard after update
+      navigate('/home');
     } else {
       // Add new task
       const newTask = {
@@ -286,6 +332,8 @@ const Todo: React.FC = () => {
         resetForm();
         alert("Task created locally. Server sync failed.");
       }
+      // Return to dashboard after create
+      navigate('/home');
     }
   };
 
@@ -363,22 +411,22 @@ const Todo: React.FC = () => {
   const getPriorityColor = (priority: string | undefined) => {
     const safePriority = priority || 'medium';
     switch (safePriority) {
-      case 'urgent': return 'text-red-600 bg-red-50 border-red-200';
-      case 'high': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'low': return 'text-green-600 bg-green-50 border-green-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'urgent': return 'text-white bg-gradient-to-r from-red-500 to-pink-500 border-red-400 shadow-sm';
+      case 'high': return 'text-white bg-gradient-to-r from-orange-500 to-red-500 border-orange-400 shadow-sm';
+      case 'medium': return 'text-white bg-gradient-to-r from-yellow-500 to-orange-500 border-yellow-400 shadow-sm';
+      case 'low': return 'text-white bg-gradient-to-r from-green-500 to-emerald-500 border-green-400 shadow-sm';
+      default: return 'text-white bg-gradient-to-r from-blue-500 to-indigo-500 border-blue-400 shadow-sm';
     }
   };
 
   const getPriorityIcon = (priority: string | undefined) => {
     const safePriority = priority || 'medium';
     switch (safePriority) {
-      case 'urgent': return <AlertCircle size={16} />;
-      case 'high': return <Star size={16} />;
-      case 'medium': return <Clock size={16} />;
-      case 'low': return <Circle size={16} />;
-      default: return <Circle size={16} />;
+      case 'urgent': return <AlertCircle size={16} className="text-white" />;
+      case 'high': return <Star size={16} className="text-white" />;
+      case 'medium': return <Clock size={16} className="text-white" />;
+      case 'low': return <Circle size={16} className="text-white" />;
+      default: return <Circle size={16} className="text-white" />;
     }
   };
 
@@ -389,22 +437,22 @@ const Todo: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-6 pl-24 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading tasks...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-200 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading tasks...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-6 pl-24">
+    <div className="min-h-screen bg-gradient-to-br from-[#c6ffdd] via-[#fbd786] to-[#f7797d] dark:from-gray-900 dark:to-gray-800 p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tasks</h1>
-          <p className="text-gray-600 mt-1">Manage your tasks and priorities efficiently.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Tasks</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your tasks and priorities efficiently.</p>
           {error && (
             <div className="flex items-center gap-2 mt-2 text-amber-600 text-sm">
               <AlertCircle size={16} />
@@ -415,7 +463,7 @@ const Todo: React.FC = () => {
         
         <button 
           onClick={handleAdd}
-          className="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+          className="flex items-center gap-2 px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
         >
           <Plus size={18} />
           Add New Task
@@ -424,39 +472,47 @@ const Todo: React.FC = () => {
 
       {/* Priority Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+        <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm dark:backdrop-blur-none p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Tasks</h3>
-            <Circle className="text-blue-500" size={20} />
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Total Tasks</h3>
+            <div className="p-2 rounded-lg bg-gradient-to-r from-gray-600 to-gray-700">
+              <Circle className="text-white" size={20} />
+            </div>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{totalTasks}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalTasks}</p>
           <p className="text-sm text-gray-500 mt-1">all tasks</p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+        <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm dark:backdrop-blur-none p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Completed</h3>
-            <CheckCircle2 className="text-green-500" size={20} />
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Completed</h3>
+            <div className="p-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600">
+              <CheckCircle2 className="text-white" size={20} />
+            </div>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{completedTasks}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{completedTasks}</p>
           <p className="text-sm text-gray-500 mt-1">tasks done</p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+        <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm dark:backdrop-blur-none p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Pending</h3>
-            <Clock className="text-amber-500" size={20} />
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Pending</h3>
+            <div className="p-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600">
+              <Clock className="text-white" size={20} />
+            </div>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{pendingTasks}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{pendingTasks}</p>
           <p className="text-sm text-gray-500 mt-1">remaining</p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+        <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm dark:backdrop-blur-none p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">High Priority</h3>
-            <Bell className="text-red-500" size={20} />
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">High Priority</h3>
+            <div className="p-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-600">
+              <Bell className="text-white" size={20} />
+            </div>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{urgentTasks + highTasks}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{urgentTasks + highTasks}</p>
           <p className="text-sm text-gray-500 mt-1">urgent + high</p>
         </div>
       </div>
@@ -464,14 +520,14 @@ const Todo: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Task Form */}
         {showForm && (
-          <div className="xl:col-span-1 bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <div className="xl:col-span-1 bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm dark:backdrop-blur-none p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
               {toggleSubmit ? "Add New Task" : "Edit Task"}
             </h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Title
                 </label>
                 <input
@@ -481,12 +537,12 @@ const Todo: React.FC = () => {
                   onChange={handleInput}
                   value={inputTitle}
                   autoComplete="off"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all text-gray-900 dark:text-gray-100"
                 />
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Description
                 </label>
                 <input
@@ -496,12 +552,12 @@ const Todo: React.FC = () => {
                   onChange={handleInputDesc}
                   value={inputDesc}
                   autoComplete="off"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all text-gray-900 dark:text-gray-100"
                 />
               </div>
 
               <div>
-                <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Due Date
                 </label>
                 <input
@@ -509,19 +565,20 @@ const Todo: React.FC = () => {
                   id="dueDate"
                   onChange={handleDueDateChange}
                   value={inputDueDate}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  min={todayISO}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all text-gray-900 dark:text-gray-100"
                 />
               </div>
 
               <div>
-                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Priority
                 </label>
                 <select
                   id="priority"
                   value={inputPriority}
                   onChange={handlePriorityChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all text-gray-900 dark:text-gray-100"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -533,14 +590,14 @@ const Todo: React.FC = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-3 px-4 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  {toggleSubmit ? "Save Task" : "Update Task"}
+                  {toggleSubmit ? "Save Task" : "Update & Go Home"}
                 </button>
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-medium transition-all duration-200"
+                  className="px-4 py-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 hover:from-gray-300 hover:to-gray-400 dark:hover:from-gray-600 dark:hover:to-gray-500 text-gray-700 dark:text-gray-100 rounded-xl font-medium transition-all duration-200"
                 >
                   Cancel
                 </button>
@@ -550,11 +607,11 @@ const Todo: React.FC = () => {
         )}
 
         {/* Task List */}
-        <div className={`${showForm ? 'xl:col-span-2' : 'xl:col-span-3'} bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50`}>
+        <div className={`${showForm ? 'xl:col-span-2' : 'xl:col-span-3'} bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm dark:backdrop-blur-none p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800`}>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">Your Tasks</h3>
-              <p className="text-sm text-gray-500 mt-1">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Your Tasks</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {items.length} tasks • {completedTasks} completed • {pendingTasks} pending
               </p>
             </div>
@@ -577,7 +634,7 @@ const Todo: React.FC = () => {
               {items.map((elem) => (
                 <div
                   key={elem.id}
-                  className="group p-4 rounded-xl border border-gray-200 hover:border-blue-200 hover:shadow-md transition-all duration-200 bg-white/60"
+                  className="group p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-md backdrop-blur-sm dark:backdrop-blur-none transition-all duration-200 bg-white/60 dark:bg-gray-900/60"
                 >
                   <div className="flex items-center gap-4">
                     {/* Clickable completion circle */}
@@ -633,6 +690,8 @@ const Todo: React.FC = () => {
           )}
         </div>
       </div>
+
+
     </div>
   );
 };

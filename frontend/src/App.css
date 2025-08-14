@@ -332,3 +332,17 @@ body {
   color: var(--text-color);
   transition: background-color 0.3s, color 0.3s;
 }
+
+/* Responsive layout for app main */
+@media (max-width: 1024px) {
+  .app-main {
+    margin-left: 0 !important;
+  }
+}
+
+/* Better responsive spacing for small screens */
+@media (max-width: 640px) {
+  .app-main {
+    width: 100vw;
+  }
+}

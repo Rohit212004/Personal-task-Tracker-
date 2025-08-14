@@ -7,13 +7,15 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];
 var jwtKey = builder.Configuration["Jwt:Key"] 
              ?? throw new ArgumentNullException("Jwt:Key is missing in configuration");
 
-var key = Encoding.UTF8.GetBytes(jwtKey);
+var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(jwtKey));
+var signingKey = new SymmetricSecurityKey(keyBytes);
 builder.Services.AddSingleton<IMyLogger, MyLogger>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -21,7 +23,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
+            IssuerSigningKey = signingKey,
             ValidateIssuer = false,
             ValidateAudience = false
         };

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { ColorModeContext } from '../theme';
+import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, 
@@ -24,21 +26,20 @@ interface UserInfo {
 const Settings = () => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const colorMode = useContext(ColorModeContext);
+  const muiTheme = useTheme();
   const [theme, setTheme] = useState(
-    localStorage.getItem('theme') || 'light'
+    (localStorage.getItem('theme') || 'light')
   );
   const [notifications, setNotifications] = useState(true);
   const [autoSave, setAutoSave] = useState(true);
 
+  // Sync theme state with Material-UI theme
   useEffect(() => {
-    // Theme effect
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
+    setTheme(muiTheme.palette.mode);
+  }, [muiTheme.palette.mode]);
 
+  useEffect(() => {
     // Load user info
     const userData = localStorage.getItem('user');
     if (userData) {
@@ -55,7 +56,7 @@ const Settings = () => {
     if (savedAutoSave) {
       setAutoSave(JSON.parse(savedAutoSave));
     }
-  }, [theme]);
+  }, []);
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -65,9 +66,7 @@ const Settings = () => {
     }
   };
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+
 
   const toggleNotifications = () => {
     const newValue = !notifications;
@@ -87,9 +86,9 @@ const Settings = () => {
     icon?: React.ReactNode;
     className?: string;
   }> = ({ title, children, icon, className = '' }) => (
-    <div className={`bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-xl ${className}`}>
+    <div className={`bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm dark:backdrop-blur-none rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-6 transition-all duration-300 hover:shadow-2xl ${className}`}>
       <div className="flex items-center gap-3 mb-4">
-        {icon && <div className="text-blue-600 dark:text-blue-400">{icon}</div>}
+        {icon && <div className="text-gray-600 dark:text-gray-400">{icon}</div>}
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
       </div>
       {children}
@@ -111,9 +110,9 @@ const Settings = () => {
       </div>
       <button
         onClick={onToggle}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
           enabled 
-            ? 'bg-blue-600' 
+            ? 'bg-gray-700 dark:bg-gray-600' 
             : 'bg-gray-200 dark:bg-gray-600'
         }`}
       >
@@ -127,12 +126,12 @@ const Settings = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-gray-900 dark:to-gray-800/30 p-6 pl-24 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-[#c6ffdd] via-[#fbd786] to-[#f7797d] dark:from-gray-900 dark:to-gray-800 p-6 pl-24 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <SettingsIcon className="text-blue-600 dark:text-blue-400" size={28} />
+            <SettingsIcon className="text-gray-600 dark:text-gray-400" size={28} />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
           </div>
           <p className="text-gray-600 dark:text-gray-400">
@@ -146,7 +145,7 @@ const Settings = () => {
             <SettingCard title="Account & Profile" icon={<User size={20} />}>
               {userInfo ? (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                  <div className="flex items-center gap-4 p-4 bg-gray-50/80 dark:bg-gray-800/50 rounded-xl">
                     <div className="relative">
                       <img 
                         src={userInfo.picture || 'https://via.placeholder.com/64'} 
@@ -173,7 +172,7 @@ const Settings = () => {
                   
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 group"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 group"
                   >
                     <LogOut size={18} className="group-hover:rotate-6 transition-transform duration-200" />
                     Sign Out
@@ -220,21 +219,25 @@ const Settings = () => {
                 
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => setTheme('light')}
+                    onClick={() => { 
+                      if (theme !== 'light') {
+                        colorMode.toggleColorMode();
+                      }
+                    }}
                     className={`p-4 rounded-xl border-2 transition-all duration-200 group ${
                       theme === 'light'
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                        ? 'border-gray-700 bg-gray-100 dark:bg-gray-800'
                         : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                     }`}
                   >
                     <Sun size={24} className={`mx-auto mb-2 ${
                       theme === 'light' 
-                        ? 'text-blue-600' 
+                        ? 'text-gray-700 dark:text-gray-300' 
                         : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
                     }`} />
                     <div className={`text-sm font-medium ${
                       theme === 'light' 
-                        ? 'text-blue-900 dark:text-blue-100' 
+                        ? 'text-gray-900 dark:text-gray-100' 
                         : 'text-gray-600 dark:text-gray-400'
                     }`}>
                       Light
@@ -242,21 +245,25 @@ const Settings = () => {
                   </button>
                   
                   <button
-                    onClick={() => setTheme('dark')}
+                    onClick={() => { 
+                      if (theme !== 'dark') {
+                        colorMode.toggleColorMode();
+                      }
+                    }}
                     className={`p-4 rounded-xl border-2 transition-all duration-200 group ${
                       theme === 'dark'
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                        ? 'border-gray-700 bg-gray-100 dark:bg-gray-800'
                         : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                     }`}
                   >
                     <Moon size={24} className={`mx-auto mb-2 ${
                       theme === 'dark' 
-                        ? 'text-blue-600 dark:text-blue-400' 
+                        ? 'text-gray-700 dark:text-gray-300' 
                         : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
                     }`} />
                     <div className={`text-sm font-medium ${
                       theme === 'dark' 
-                        ? 'text-blue-900 dark:text-blue-100' 
+                        ? 'text-gray-900 dark:text-gray-100' 
                         : 'text-gray-600 dark:text-gray-400'
                     }`}>
                       Dark

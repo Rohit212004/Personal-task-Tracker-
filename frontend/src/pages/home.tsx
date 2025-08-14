@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Search, FileDown, CheckCircle2, Circle, Clock, AlertCircle, RefreshCw, BarChart3, List, Star, Bell } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { Search, FileDown, CheckCircle2, Circle, Clock, AlertCircle, BarChart3, Star, Bell, LogOut, Edit2, Trash2, Plus } from "lucide-react";
+import RightSummaryDrawer, { SummaryRange } from '../components/RightSummaryDrawer';
 import { GoogleGenAI } from '@google/genai';
+
 
 // API Configuration
 const API_URL = "http://localhost:8080/api/tasks";
@@ -40,6 +43,9 @@ const Home: React.FC = () => {
   const [showSummary, setShowSummary] = useState<boolean>(false);
   const [aiSummary, setAiSummary] = useState<TaskSummary | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState<boolean>(false);
+  const [summaryRange, setSummaryRange] = useState<SummaryRange>(1);
+
+  const navigate = useNavigate();
 
   // Initialize Gemini AI (Google GenAI SDK)
   // ⚠️ Note: avoid exposing API keys in client-side builds for production.
@@ -107,21 +113,49 @@ const Home: React.FC = () => {
   const mediumTasks: number = allTasks.filter((task: Task) => !task.status && task.priority === 'medium').length;
   const lowTasks: number = allTasks.filter((task: Task) => !task.status && task.priority === 'low').length;
 
+  // Helper: filter tasks for previous N days (including today)
+  const getTasksForPreviousDays = (days: number): Task[] => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (days - 1));
+    return tasks.filter((t) => {
+      const d = new Date(t.dueDate);
+      return d >= start && d <= end;
+    });
+  };
+
   // Generate AI summary using Gemini (gemini-2.5-flash) with priority insights
   const generateAISummary = async (tasksParam: Task[]): Promise<TaskSummary> => {
+    const totalTasksRange = tasksParam.length;
+    const completedRange = tasksParam.filter(t => t.status).length;
+    const pendingRange = tasksParam.filter(t => !t.status).length;
+    const urgentRange = tasksParam.filter(t => !t.status && t.priority === 'urgent').length;
+    const highRange = tasksParam.filter(t => !t.status && t.priority === 'high').length;
+    const mediumRange = tasksParam.filter(t => !t.status && t.priority === 'medium').length;
+    const lowRange = tasksParam.filter(t => !t.status && t.priority === 'low').length;
     try {
       setIsGeneratingSummary(true);
 
+      const totalTasksRange = tasksParam.length;
+      const completedRange = tasksParam.filter(t => t.status).length;
+      const pendingRange = tasksParam.filter(t => !t.status).length;
+      const urgentRange = tasksParam.filter(t => !t.status && t.priority === 'urgent').length;
+      const highRange = tasksParam.filter(t => !t.status && t.priority === 'high').length;
+      const mediumRange = tasksParam.filter(t => !t.status && t.priority === 'medium').length;
+      const lowRange = tasksParam.filter(t => !t.status && t.priority === 'low').length;
+
       const taskData = {
-        totalTasks: allTasks.length,
-        completedTasks,
-        pendingTasks,
+        totalTasks: totalTasksRange,
+        completedTasks: completedRange,
+        pendingTasks: pendingRange,
         inProgressTasks,
-        urgentTasks,
-        highTasks,
-        mediumTasks,
-        lowTasks,
-        tasks: allTasks.map(task => ({
+        urgentTasks: urgentRange,
+        highTasks: highRange,
+        mediumTasks: mediumRange,
+        lowTasks: lowRange,
+        tasks: tasksParam.map(task => ({
           title: task.name,
           desc: task.desc,
           dueDate: task.dueDate,
@@ -210,16 +244,16 @@ Format your response as JSON with the following structure:
     } catch (error) {
       console.error('Error generating AI summary:', error);
       return {
-        totalTasks: allTasks.length,
-        completedTasks,
-        pendingTasks,
+        totalTasks: tasksParam.length,
+        completedTasks: completedRange,
+        pendingTasks: pendingRange,
         inProgressTasks,
-        urgentTasks,
-        highTasks,
-        mediumTasks,
-        lowTasks,
-        completionRate: allTasks.length > 0 ? (completedTasks / allTasks.length) * 100 : 0,
-        aiInsights: `Your task management system shows ${urgentTasks} urgent and ${highTasks} high priority tasks requiring immediate attention. Consider focusing on priority-based completion to enhance overall productivity and reduce stress from critical pending items.`,
+        urgentTasks: urgentRange,
+        highTasks: highRange,
+        mediumTasks: mediumRange,
+        lowTasks: lowRange,
+        completionRate: tasksParam.length > 0 ? (completedRange / tasksParam.length) * 100 : 0,
+        aiInsights: `Your task management system shows ${urgentRange} urgent and ${highRange} high priority tasks requiring immediate attention. Consider focusing on priority-based completion to enhance overall productivity and reduce stress from critical pending items.`,
         recommendations: [
           "Address urgent and high priority tasks immediately",
           "Implement time-blocking for different priority levels",
@@ -235,6 +269,8 @@ Format your response as JSON with the following structure:
   useEffect(() => {
     fetchTasks();
   }, []);
+
+
 
   // Refresh tasks function
   const handleRefreshTasks = async (): Promise<void> => {
@@ -256,10 +292,21 @@ Format your response as JSON with the following structure:
 
   const handleToggleSummary = async (): Promise<void> => {
     if (!showSummary) {
-      const summary = await generateAISummary(allTasks);
+      setShowSummary(true);
+      setAiSummary(null);
+      const rangeTasks = getTasksForPreviousDays(summaryRange);
+      const summary = await generateAISummary(rangeTasks);
       setAiSummary(summary);
+    } else {
+      setShowSummary(false);
     }
-    setShowSummary(!showSummary);
+  };
+
+  const handleSummaryRangeChange = async (days: 1 | 3 | 7): Promise<void> => {
+    setSummaryRange(days);
+    const rangeTasks = getTasksForPreviousDays(days);
+    const summary = await generateAISummary(rangeTasks);
+    setAiSummary(summary);
   };
 
   const handleDateChange = (value: any): void => {
@@ -276,31 +323,99 @@ Format your response as JSON with the following structure:
     setSearchQuery(e.target.value);
   };
 
+  const handleLogout = (): void => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  const handleAddTask = (): void => {
+    navigate('/todo');
+  };
+
+  const handleEditTask = (id: number): void => {
+    navigate(`/todo?editId=${id}`);
+  };
+
+  const handleDeleteTask = async (id: number): Promise<void> => {
+    try {
+      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setTasks(prev => prev.filter(t => t.id !== id));
+    } catch (e) {
+      setTasks(prev => prev.filter(t => t.id !== id));
+    }
+  };
+
+  const handleToggleComplete = async (id: number): Promise<void> => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    const updatedTask = { ...task, status: !task.status };
+    try {
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
+    } catch (e) {
+      // Optimistic update even if API fails
+      setTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
+    }
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'text-red-600 bg-red-50 border-red-200';
-      case 'high': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'low': return 'text-green-600 bg-green-50 border-green-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'urgent': return 'text-white bg-gradient-to-r from-red-500 to-pink-500 border-red-400 shadow-sm';
+      case 'high': return 'text-white bg-gradient-to-r from-orange-500 to-red-500 border-orange-400 shadow-sm';
+      case 'medium': return 'text-white bg-gradient-to-r from-yellow-500 to-orange-500 border-yellow-400 shadow-sm';
+      case 'low': return 'text-white bg-gradient-to-r from-green-500 to-emerald-500 border-green-400 shadow-sm';
+      default: return 'text-white bg-gradient-to-r from-blue-500 to-indigo-500 border-blue-400 shadow-sm';
     }
   };
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case 'urgent': return <AlertCircle size={16} />;
-      case 'high': return <Star size={16} />;
-      case 'medium': return <Clock size={16} />;
-      case 'low': return <Circle size={16} />;
-      default: return <Circle size={16} />;
+      case 'urgent': return <AlertCircle size={16} className="text-white"/>;
+      case 'high': return <Star size={16} className="text-white"/>;
+      case 'medium': return <Clock size={16} className="text-white"/>;
+      case 'low': return <Circle size={16} className="text-white"/>;
+      default: return <Circle size={16} className="text-white"/>;
     }
   };
 
-  const handleExport = (): void => {
+  const [showExportMenu, setShowExportMenu] = useState<boolean>(false);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.export-menu-container')) {
+        setShowExportMenu(false);
+      }
+    };
+
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportMenu]);
+
+  const handleExport = (format: 'txt' | 'json' | 'csv'): void => {
     const currentDate = new Date().toLocaleDateString();
     const currentTime = new Date().toLocaleTimeString();
     
-    const docContent = `
+    let content: string;
+    let fileName: string;
+    let mimeType: string;
+    
+    switch (format) {
+      case 'txt':
+        content = `
 DAILY TASK REPORT WITH PRIORITY ANALYSIS
 =======================================
 
@@ -347,383 +462,312 @@ ${urgentTasks + highTasks > 0
 
 ---
 Report generated by Task Management Dashboard
-    `;
+        `;
+        fileName = `Daily_Task_Report_${new Date().toISOString().split('T')[0]}.txt`;
+        mimeType = 'text/plain;charset=utf-8';
+        break;
+        
+      case 'json':
+        const jsonData = {
+          reportInfo: {
+            generatedOn: currentDate,
+            generatedAt: currentTime,
+            totalTasks: todayTasks.length,
+            completedTasks,
+            pendingTasks,
+            completionRate: todayTasks.length > 0 ? ((completedTasks / todayTasks.length) * 100).toFixed(1) : 0
+          },
+          priorityBreakdown: {
+            urgent: urgentTasks,
+            high: highTasks,
+            medium: mediumTasks,
+            low: lowTasks
+          },
+          tasks: todayTasks.map(task => ({
+            id: task.id,
+            name: task.name,
+            description: task.desc,
+            dueDate: task.dueDate,
+            priority: task.priority,
+            status: task.status ? 'completed' : 'pending',
+            formattedDueDate: new Date(task.dueDate).toLocaleDateString()
+          })),
+          recommendations: urgentTasks + highTasks > 0 
+            ? [
+                'Focus on urgent and high priority tasks first',
+                'Consider time-blocking for critical tasks',
+                'Review deadlines for priority tasks daily'
+              ]
+            : [
+                'Maintain current task completion momentum',
+                'Consider planning ahead for upcoming deadlines',
+                'Review task priorities regularly'
+              ]
+        };
+        content = JSON.stringify(jsonData, null, 2);
+        fileName = `Task_Data_${new Date().toISOString().split('T')[0]}.json`;
+        mimeType = 'application/json';
+        break;
+        
+      case 'csv':
+        const csvHeaders = 'Task ID,Name,Description,Due Date,Priority,Status\n';
+        const csvRows = todayTasks.map(task => 
+          `${task.id},"${task.name}","${task.desc}","${new Date(task.dueDate).toLocaleDateString()}","${task.priority.toUpperCase()}","${task.status ? 'COMPLETED' : 'PENDING'}"`
+        ).join('\n');
+        content = csvHeaders + csvRows;
+        fileName = `Task_Data_${new Date().toISOString().split('T')[0]}.csv`;
+        mimeType = 'text/csv';
+        break;
+        
+      default:
+        return;
+    }
     
-    const blob = new Blob([docContent], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
-    const exportFileDefaultName = `Daily_Task_Report_Priority_${new Date().toISOString().split('T')[0]}.txt`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', url);
-    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.setAttribute('download', fileName);
     linkElement.click();
     
     // Clean up the URL object
     setTimeout(() => URL.revokeObjectURL(url), 100);
+    setShowExportMenu(false);
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-gray-900 dark:to-gray-800/30 p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-6 pl-24">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome! Here's your day at a glance.</p>
-          {error && (
-            <div className="flex items-center gap-2 mt-2 text-amber-600 text-sm">
-              <AlertCircle size={16} />
-              <span>Using offline data - API connection failed</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+    <div className="min-h-screen bg-gradient-to-br from-[#c6ffdd] via-[#fbd786] to-[#f7797d] dark:from-gray-900 dark:to-gray-800 relative">
+      {/* Top Bar - Responsive positioning based on sidebar state */}
+      <div className={`sticky top-0 z-30 bg-white/95 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200/60 dark:border-gray-800/60 px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between transition-all duration-300 ${
+        showSummary 
+          ? 'lg:mr-80' // Match summary drawer width
+          : ''
+      }`}>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={handleSearchChange}
-              className="pl-10 pr-4 py-3 w-64 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="pl-9 pr-3 py-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/80 text-gray-800 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
             />
           </div>
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+                     <div className="relative export-menu-container">
+             <button 
+               onClick={() => setShowExportMenu(!showExportMenu)}
+               className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+             >
+               <FileDown size={18} />
+               <span className="hidden xs:inline">Export</span>
+             </button>
+             
+              {showExportMenu && (
+                <div className="absolute top-full right-0 mt-2 w-56 bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 py-2 z-50">
+                 <button
+                    onClick={() => handleExport('txt')}
+                    className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition-colors flex items-center gap-3"
+                 >
+                    <div className="w-6 h-6 rounded bg-gradient-to-r from-gray-700 to-gray-800 text-white flex items-center justify-center">
+                      <span className="text-xs font-bold">T</span>
+                   </div>
+                   <span className="text-sm">Text Report (.txt)</span>
+                 </button>
+                 <button
+                    onClick={() => handleExport('json')}
+                    className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition-colors flex items-center gap-3"
+                 >
+                    <div className="w-6 h-6 rounded bg-gradient-to-r from-gray-700 to-gray-800 text-white flex items-center justify-center">
+                      <span className="text-xs font-bold">J</span>
+                   </div>
+                   <span className="text-sm">JSON Data (.json)</span>
+                 </button>
+                 <button
+                    onClick={() => handleExport('csv')}
+                    className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition-colors flex items-center gap-3"
+                 >
+                    <div className="w-6 h-6 rounded bg-gradient-to-r from-gray-700 to-gray-800 text-white flex items-center justify-center">
+                      <span className="text-xs font-bold">C</span>
+                   </div>
+                   <span className="text-sm">Excel/CSV (.csv)</span>
+                 </button>
+               </div>
+             )}
+           </div>
           <button 
-            onClick={handleRefreshTasks}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+            onClick={handleToggleSummary}
+            disabled={isGeneratingSummary}
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium disabled:opacity-50"
           >
-            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-            Refresh
+            <BarChart3 size={18} />
+            <span className="hidden xs:inline">Summary</span>
           </button>
           <button 
-            onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+            onClick={handleAddTask}
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
           >
-            <FileDown size={18} />
-            Export
+            <Plus size={18} />
+            <span className="hidden xs:inline">Add Task</span>
+          </button>
+
+          <button 
+            onClick={handleLogout}
+            className="p-2 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+            title="Logout"
+          >
+            <LogOut size={18} />
           </button>
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        {/* Left Section - 3 columns */}
-        <div className="xl:col-span-3 space-y-6">
-          {/* Greeting Card with Thought */}
-          <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-8 rounded-2xl shadow-xl">
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-3xl font-bold mb-2">{getGreeting()}!</h2>
-                  <p className="text-blue-100 text-lg">
-                    You have {allTasks.length} total tasks • {completedTasks} completed • {pendingTasks} pending
-                  </p>
-                  {(urgentTasks > 0 || highTasks > 0) && (
-                    <p className="text-red-200 text-sm mt-1 flex items-center gap-1">
-                      <Bell size={14} />
-                      {urgentTasks + highTasks} high priority tasks need attention
+      {/* Main Content Container - Responsive layout with proper centering */}
+      <div className={`transition-all duration-300 ${
+        showSummary 
+          ? 'lg:mr-80' // Match summary drawer width
+          : ''
+      }`}>
+        <div className="max-w-7xl mx-auto p-6">
+          {/* Content Cards - Centered with proper spacing */}
+          <div className="space-y-6">
+            {/* Greeting Card */}
+            <div className="relative overflow-hidden bg-gradient-to-r from-gray-900 to-gray-700 text-white p-8 rounded-2xl shadow-2xl">
+              <div className="absolute inset-0 bg-black/10"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h2 className="text-3xl font-bold mb-2">{getGreeting()}!</h2>
+                    <p className="text-gray-100 text-lg">
+                      You have {allTasks.length} total tasks • {completedTasks} completed • {pendingTasks} pending
                     </p>
-                  )}
-                </div>
-                <div className="hidden sm:block text-6xl opacity-20">
-                  ✨
+                    {(urgentTasks > 0 || highTasks > 0) && (
+                      <p className="text-yellow-200 text-sm mt-1 flex items-center gap-1">
+                        <Bell size={14} />
+                        {urgentTasks + highTasks} high priority tasks need attention
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
               
-              {/* Thought of the Day */}
-              <div className="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-                <h4 className="text-sm font-semibold text-blue-100 uppercase tracking-wide mb-2">
-                  Thought of the Day
-                </h4>
-                <p className="text-white/90 italic leading-relaxed">
-                  {thought}
-                </p>
-              </div>
-            </div>
-            
-            {/* Decorative elements */}
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-          </div>
-
-          {/* Stats Cards - Updated with Priority Information */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Tasks</h3>
-                <Circle className="text-blue-500" size={20} />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{allTasks.length}</p>
-              <p className="text-sm text-gray-500 mt-1">total tasks</p>
+              {/* Decorative elements */}
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+              <div className="absolute top-1/2 right-8 w-16 h-16 bg-white/5 rounded-full blur-xl"></div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Completed</h3>
-                <CheckCircle2 className="text-green-500" size={20} />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{completedTasks}</p>
-              <p className="text-sm text-gray-500 mt-1">tasks done</p>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Pending</h3>
-                <Circle className="text-amber-500" size={20} />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{pendingTasks}</p>
-              <p className="text-sm text-gray-500 mt-1">remaining</p>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">High Priority</h3>
-                <Bell className="text-red-500" size={20} />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{urgentTasks + highTasks}</p>
-              <p className="text-sm text-gray-500 mt-1">urgent + high</p>
-            </div>
-          </div>
-
-          {/* Tasks Section / Summary Section */}
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">
-                  {showSummary ? "Overall Task Analysis" : "Today's Tasks"}
-                </h3>
-                {!showSummary && searchQuery && (
-                  <p className="text-sm text-gray-500 mt-1">
+            {/* Tasks Section - Responsive width management */}
+              <div className="bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm dark:backdrop-blur-none p-4 sm:p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
+              <div className="mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">Today's Tasks</h3>
+                {searchQuery && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Showing {filteredTasks.length} of {todayTasks.length} tasks matching "{searchQuery}"
                   </p>
                 )}
-                {showSummary && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Comprehensive analysis of all your tasks with priority insights
-                  </p>
-                )}
               </div>
-              <button 
-                onClick={handleToggleSummary}
-                disabled={isGeneratingSummary}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors font-medium disabled:opacity-50"
-              >
-                {isGeneratingSummary ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    {showSummary ? <List size={18} /> : <BarChart3 size={18} />}
-                    {showSummary ? "Today's Tasks" : "Summary"}
-                  </>
-                )}
-              </button>
-            </div>
-            
-            {showSummary ? (
-              // Summary View - Updated with Priority Information
-              <div className="space-y-6">
-                {aiSummary && (
-                  <>
-                    {/* Progress Overview */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Overall Progress</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Completion Rate</span>
-                            <span className="font-semibold text-blue-600">{aiSummary.completionRate.toFixed(1)}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-3">
-                            <div 
-                              className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-500"
-                              style={{ width: `${aiSummary.completionRate}%` }}
-                            ></div>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-                            <div className="bg-white p-3 rounded-lg">
-                              <div className="text-2xl font-bold text-blue-600">{aiSummary.totalTasks}</div>
-                              <div className="text-xs text-gray-500">Total</div>
-                            </div>
-                            <div className="bg-white p-3 rounded-lg">
-                              <div className="text-2xl font-bold text-green-600">{aiSummary.completedTasks}</div>
-                              <div className="text-xs text-gray-500">Done</div>
-                            </div>
-                            <div className="bg-white p-3 rounded-lg">
-                              <div className="text-2xl font-bold text-amber-600">{aiSummary.pendingTasks}</div>
-                              <div className="text-xs text-gray-500">Pending</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
 
-                      <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl border border-red-100">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Priority Breakdown</h4>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <AlertCircle className="text-red-500" size={16} />
-                              <span className="text-gray-700">Urgent</span>
-                            </div>
-                            <span className="font-semibold text-red-600">{aiSummary.urgentTasks}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Star className="text-orange-500" size={16} />
-                              <span className="text-gray-700">High</span>
-                            </div>
-                            <span className="font-semibold text-orange-600">{aiSummary.highTasks}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Clock className="text-yellow-500" size={16} />
-                              <span className="text-gray-700">Medium</span>
-                            </div>
-                            <span className="font-semibold text-yellow-600">{aiSummary.mediumTasks}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Circle className="text-green-500" size={16} />
-                              <span className="text-gray-700">Low</span>
-                            </div>
-                            <span className="font-semibold text-green-600">{aiSummary.lowTasks}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                            <div className="flex h-2 rounded-full overflow-hidden">
-                              <div 
-                                className="bg-red-500 transition-all duration-500" 
-                                style={{ width: `${aiSummary.pendingTasks > 0 ? (aiSummary.urgentTasks / aiSummary.pendingTasks) * 100 : 0}%` }}
-                              ></div>
-                              <div 
-                                className="bg-orange-500 transition-all duration-500" 
-                                style={{ width: `${aiSummary.pendingTasks > 0 ? (aiSummary.highTasks / aiSummary.pendingTasks) * 100 : 0}%` }}
-                              ></div>
-                              <div 
-                                className="bg-yellow-500 transition-all duration-500" 
-                                style={{ width: `${aiSummary.pendingTasks > 0 ? (aiSummary.mediumTasks / aiSummary.pendingTasks) * 100 : 0}%` }}
-                              ></div>
-                              <div 
-                                className="bg-green-500 transition-all duration-500" 
-                                style={{ width: `${aiSummary.pendingTasks > 0 ? (aiSummary.lowTasks / aiSummary.pendingTasks) * 100 : 0}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* AI Insights */}
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        🤖 Productivity & Priority Insights
-                      </h4>
-                      <p className="text-gray-700 leading-relaxed">{aiSummary.aiInsights}</p>
-                    </div>
-
-                    {/* Recommendations */}
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-xl border border-amber-100">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        💡 Priority-Based Recommendations
-                      </h4>
-                      <div className="space-y-3">
-                        {aiSummary.recommendations.map((rec, index) => (
-                          <div key={index} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-amber-100">
-                            <div className="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                              {index + 1}
-                            </div>
-                            <span className="text-gray-700 leading-relaxed">{rec}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              // Tasks View - Updated to show priority information
-              <>
-                {filteredTasks.length === 0 ? (
-                  <div className="text-center py-12">
-                    {searchQuery ? (
-                      <>
-                        <div className="text-6xl mb-4">🔍</div>
-                        <p className="text-gray-500 text-lg">No tasks found matching "{searchQuery}"</p>
-                        <p className="text-gray-400 text-sm mt-1">Try adjusting your search terms</p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-6xl mb-4">🎉</div>
-                        <p className="text-gray-500 text-lg">No tasks for today!</p>
-                        <p className="text-gray-400 text-sm mt-1">Enjoy your free time or add some tasks to get started.</p>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredTasks.map((task: Task) => (
-                      <div
-                        key={task.id}
-                        className="group p-4 rounded-xl border border-gray-200 hover:border-blue-200 hover:shadow-md transition-all duration-200 bg-white/60"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
+              {filteredTasks.length === 0 ? (
+                <div className="text-center py-12">
+                  {searchQuery ? (
+                    <>
+                      <div className="text-6xl mb-4">🔍</div>
+                      <p className="text-gray-600 dark:text-gray-400 text-lg">No tasks found matching "{searchQuery}"</p>
+                      <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Try adjusting your search terms</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-6xl mb-4">🎉</div>
+                      <p className="text-gray-600 dark:text-gray-400 text-lg">No tasks for today!</p>
+                      <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Enjoy your free time or add some tasks to get started.</p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2 sm:space-y-3">
+                  {filteredTasks.map((task: Task) => (
+                    <div
+                      key={task.id}
+                      className="group p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-lg backdrop-blur-sm dark:backdrop-blur-none transition-all duration-200 bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80"
+                    >
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 w-full sm:w-auto min-w-0 flex-1">
+                          <button onClick={() => handleToggleComplete(task.id)} className="flex-shrink-0">
                             {task.status ? (
-                              <CheckCircle2 className="text-green-500 flex-shrink-0" size={20} />
+                              <CheckCircle2 className="text-green-500" size={18} />
                             ) : (
-                              <Circle className="text-gray-400 flex-shrink-0" size={20} />
+                              <Circle className="text-gray-400 hover:text-gray-600 transition-colors" size={18} />
                             )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className={`font-medium ${task.status ? "text-gray-500 line-through" : "text-gray-900"}`}>
-                                  {task.name}
-                                </span>
-                                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full border ${getPriorityColor(task.priority)}`}>
-                                  {getPriorityIcon(task.priority)}
-                                  {task.priority.toUpperCase()}
-                                </span>
-                              </div>
-                              <span className={`text-sm block mt-1 ${task.status ? "text-gray-400" : "text-gray-600"}`}>
-                                {task.desc}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5 sm:mb-1 min-w-0">
+                              <span className={`font-medium text-sm sm:text-base truncate ${task.status ? "text-gray-500 line-through" : "text-gray-900 dark:text-gray-100"}`}>
+                                {task.name}
                               </span>
-                              <span className="text-xs text-gray-400 block mt-1">
-                                Due: {new Date(task.dueDate).toLocaleDateString()}
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full border ${getPriorityColor(task.priority)}`}>
+                                {getPriorityIcon(task.priority)}
+                                {task.priority.toUpperCase()}
                               </span>
                             </div>
+                            <span className={`text-xs sm:text-sm block mt-0.5 sm:mt-1 truncate ${task.status ? "text-gray-400" : "text-gray-600 dark:text-gray-300"}`}>
+                              {task.desc}
+                            </span>
+                            <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-500 block mt-0.5 sm:mt-1">
+                              Due: {new Date(task.dueDate).toLocaleDateString()}
+                            </span>
                           </div>
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-shrink-0">
+                          <button onClick={() => handleEditTask(task.id)} className="p-1.5 sm:p-2 text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900/20 rounded-lg transition-colors">
+                            <Edit2 size={16} />
+                          </button>
+                          <button onClick={() => handleDeleteTask(task.id)} className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                            <Trash2 size={16} />
+                          </button>
                           <span
-                            className={`px-3 py-1 text-xs font-semibold rounded-full flex-shrink-0 ml-3 ${
+                            className={`px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold rounded-full flex-shrink-0 ${
                               task.status
-                                ? "bg-green-100 text-green-700"
-                                : "bg-amber-100 text-amber-700"
+                                ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-sm"
+                                : "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm"
                             }`}
                           >
                             {task.status ? "Completed" : "Pending"}
                           </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Right-side Summary Panel - Fixed positioning */}
+      <RightSummaryDrawer
+        open={showSummary}
+        onClose={() => setShowSummary(false)}
+        summaryRange={summaryRange}
+        onChangeRange={handleSummaryRangeChange}
+        aiSummary={aiSummary as any}
+      />
+
+
     </div>
   );
 };
