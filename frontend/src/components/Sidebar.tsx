@@ -194,11 +194,9 @@ const Sidebar: React.FC<SidebarProps> = ({ className = "" }) => {
 
     { name: "Members", path: "/members", icon: <Users size={20} /> },
 
-    { name: "Music", path: "/Music", icon: <Music size={20} /> },
+   
 
-    { name: "AI Chat", path: "/AiChat", icon: <MessageSquare size={20} /> },
-
-    { name: "Settings", path: "/settings", icon: <Settings size={20} /> },
+    { name: "AI Chat", path: "/AiChat", icon: <MessageSquare size={20} /> }
 
   ];
 

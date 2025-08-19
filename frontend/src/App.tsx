@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import Music from './pages/Music';
 import AiChat from './pages/AiChat';
 import LoginPage from './pages/LoginPage';
+import Analysis from './pages/taskAnalytics';
 
 function AppContent() {
   const theme = useTheme();
@@ -77,6 +78,11 @@ function AppContent() {
           <Route path="/settings" element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          } />
+          <Route path="/Analysis" element={
+            <ProtectedRoute>
+              <Analysis />
             </ProtectedRoute>
           } />
           <Route path="*" element={<h1>404 Not Found</h1>} />

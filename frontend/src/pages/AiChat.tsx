@@ -3,12 +3,25 @@ import { GoogleGenAI } from '@google/genai';
 import ReactMarkdown from 'react-markdown';
 import { Send, Bot, User, MessageSquare, Sparkles, AlertCircle } from 'lucide-react';
 
+// Project tasks API and types
+const API_URL = "http://localhost:8080/api/tasks";
+interface Task {
+  id: number;
+  name: string;
+  desc: string;
+  dueDate: string;
+  status: boolean;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+}
+
 const AiChat: React.FC = () => {
   const [input, setInput] = useState('');
   const [chatLog, setChatLog] = useState<{ role: string; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState<boolean>(true);
 
   // Initialize AI - handle missing API key gracefully
   const [ai, setAi] = useState<GoogleGenAI | null>(null);
@@ -20,6 +33,28 @@ const AiChat: React.FC = () => {
     } else {
       setError('API key not configured. Please add REACT_APP_GEMINI_API_KEY to your environment variables.');
     }
+  }, []);
+
+  // Load tasks from backend so AI answers are grounded in project data
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        setTasksLoading(true);
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: Task[] = await res.json();
+        const tasksWithPriority = data.map((t: any) => ({
+          ...t,
+          priority: (t.priority || 'medium') as Task['priority'],
+        }));
+        setTasks(tasksWithPriority);
+      } catch (e) {
+        setTasks([]);
+      } finally {
+        setTasksLoading(false);
+      }
+    };
+    loadTasks();
   }, []);
 
   useEffect(() => {
@@ -36,16 +71,28 @@ const AiChat: React.FC = () => {
     setError(null);
 
     try {
+      // Hard instruction to constrain answers to project task data only
+      const instruction = `You are the Task Assistant for the Personal Task Tracker project.
+Only answer questions based on the tasks data provided. If the user's message is unrelated to these tasks (e.g., general knowledge, web search, unrelated topics), reply exactly with: "I can only help with tasks in this project." Keep answers concise and actionable. Use fields: name, desc, dueDate, status (completed/pending), priority (low/medium/high/urgent).`;
+
+      // Build a compact, bounded snapshot of tasks to keep prompt size reasonable
+      const maxTasks = 200;
+      const snapshot = tasks.slice(0, maxTasks).map((t) => (
+        `- id:${t.id} | ${t.status ? 'DONE' : 'PENDING'} | priority:${t.priority.toUpperCase()} | due:${t.dueDate} | name:${t.name} | desc:${t.desc}`
+      )).join('\n');
+
+      const prompt = `${instruction}\n\nTASKS (first ${Math.min(tasks.length, maxTasks)} of ${tasks.length}):\n${snapshot || '(no tasks available)'}\n\nUSER QUESTION:\n${input}`;
+
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: input }] }],
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
       });
-      
+
       const aiReplyText =
         response?.candidates?.[0]?.content?.parts?.[0]?.text ||
         response?.text ||
         'No response from AI.';
-      
+
       const aiReply = { role: 'model', text: aiReplyText };
       setChatLog((prev) => [...prev, aiReply]);
     } catch (error) {
@@ -72,19 +119,14 @@ const AiChat: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AI Assistant</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Chat with Gemini - your intelligent AI companion.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AI Task Assistant</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Ask about your project tasks: due dates, priorities, summaries, and completion.</p>
           {error && (
             <div className="flex items-center gap-2 mt-2 text-red-600 dark:text-red-400 text-sm">
               <AlertCircle size={16} />
               <span>{error}</span>
             </div>
           )}
-        </div>
-        
-        <div className="flex items-center gap-3 text-sm text-gray-500">
-          <Sparkles size={16} />
-          <span>Powered by Google Gemini</span>
         </div>
       </div>
 
@@ -101,8 +143,8 @@ const AiChat: React.FC = () => {
                     <Bot className="text-white" size={28} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold">AI Chat Assistant</h2>
-                    <p className="text-gray-200">Ask me anything - I'm here to help!</p>
+                    <h2 className="text-2xl font-bold">AI Task Assistant</h2>
+                    <p className="text-gray-200">I only answer about your tasks in this project.</p>
                   </div>
                 </div>
                 
@@ -119,7 +161,7 @@ const AiChat: React.FC = () => {
               </div>
               
               <div className="hidden sm:block">
-                 <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                 <div className="w-20 h-20 bg-black/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                   <Bot size={40} className="text-white" />
                 </div>
               </div>
@@ -171,11 +213,16 @@ const AiChat: React.FC = () => {
                   <Bot className="text-white" size={24} />
                 </div>
                 <p className="text-gray-500 text-lg mb-2">Start a conversation!</p>
-                <p className="text-gray-400 text-sm">Ask me anything - from coding help to creative ideas.</p>
+                <p className="text-gray-400 text-sm">Ask me anything related to your tasks.</p>
                 
                 {/* Suggested prompts */}
                 <div className="mt-6 flex flex-wrap gap-2 justify-center">
-                  {['Explain React hooks', 'Write a poem', 'Debug my code', 'Creative ideas'].map((prompt) => (
+                  {[
+                    'List urgent tasks due this week',
+                    'What tasks are pending today?',
+                    'Summarize completed tasks this month',
+                    'Which high priority tasks are overdue?'
+                  ].map((prompt) => (
                     <button
                       key={prompt}
                       onClick={() => setInput(prompt)}
@@ -204,8 +251,8 @@ const AiChat: React.FC = () => {
                  <div className={`max-w-[85vw] sm:max-w-3xl ${msg.role === 'user' ? 'text-right' : ''}`}>
                   <div className={`inline-block p-4 rounded-xl shadow-sm ${
                     msg.role === 'user'
-                      ? 'bg-blue-500 text-white rounded-br-sm'
-                      : 'bg-white/80 text-gray-900 border border-gray-200 backdrop-bl-sm dark:backdrop-blur-none rounded-bl-sm'
+                      ? 'bg-bg-gray-900/60 text-white rounded-br-sm'
+                      : 'bg-bg-gray-900/60 text-gray-900 border border-gray-200 backdrop-bl-sm dark:backdrop-blur-none rounded-bl-sm'
                   }`}>
                     <div className="text-xs font-medium mb-2 opacity-70">
                       {msg.role === 'user' ? 'You' : 'Gemini AI'}
