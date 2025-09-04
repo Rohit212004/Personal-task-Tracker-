@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: tasktracker_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-tasktracker_root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-logsdb}
+      MYSQL_USER: ${MYSQL_USER:-tasktracker_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-tasktracker_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - tasktracker_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 30s
+
+  # Backend API (.NET 8)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tasktracker_backend
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=${MYSQL_DATABASE:-logsdb};User=${MYSQL_USER:-tasktracker_user};Password=${MYSQL_PASSWORD:-tasktracker_password};
+      - ConnectionStrings__MySQL=Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-logsdb};Uid=${MYSQL_USER:-tasktracker_user};Pwd=${MYSQL_PASSWORD:-tasktracker_password};SslMode=none;
+      - Jwt__Key=${JWT_SECRET_KEY:-YourGeneratedSecretKeyHmmmmm}
+      - Jwt__Issuer=${JWT_ISSUER:-PersonalTaskTracker}
+      - Jwt__Audience=${JWT_AUDIENCE:-PersonalTaskTrackerUsers}
+      - Jwt__ExpiryInHours=${JWT_EXPIRY_HOURS:-24}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - tasktracker_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      timeout: 10s
+      retries: 3
+      interval: 30s
+      start_period: 40s
+
+  # Frontend (React + Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=http://localhost:8080
+        - REACT_APP_GEMINI_API_KEY=${REACT_APP_GEMINI_API_KEY}
+        - REACT_APP_OPENWEATHER_API_KEY=${REACT_APP_OPENWEATHER_API_KEY}
+    container_name: tasktracker_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - tasktracker_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      timeout: 10s
+      retries: 3
+      interval: 30s
+      start_period: 30s
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: tasktracker_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - tasktracker_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 10s
+      retries: 3
+      interval: 30s
+      start_period: 30s
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  tasktracker_network:
+    driver: bridge

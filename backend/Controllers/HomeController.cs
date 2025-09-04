@@ -27,5 +27,16 @@ namespace personal_task_tracker_backend.Controllers
         {
             return "Welcome to the Personal Task Tracker API!";
         }
+
+        [HttpGet("health")]
+        public IActionResult GetHealth()
+        {
+            return Ok(new { 
+                status = "healthy", 
+                timestamp = DateTime.UtcNow,
+                service = "Personal Task Tracker API",
+                version = "1.0.0"
+            });
+        }
     }
 }

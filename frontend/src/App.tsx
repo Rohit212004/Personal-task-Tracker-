@@ -12,6 +12,7 @@ import Home from './pages/home';
 import Settings from './pages/Settings';
 import Music from './pages/Music';
 import AiChat from './pages/AiChat';
+import AITaskManager from './pages/AITaskManager';
 import LoginPage from './pages/LoginPage';
 import Analysis from './pages/taskAnalytics';
 
@@ -73,6 +74,11 @@ function AppContent() {
           <Route path="/AiChat" element={
             <ProtectedRoute>
               <AiChat />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-task-manager" element={
+            <ProtectedRoute>
+              <AITaskManager />
             </ProtectedRoute>
           } />
           <Route path="/settings" element={

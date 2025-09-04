@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { Home as HomeIcon, ListTodo, Users, Music, MessageSquare, Settings, Menu, X, Bell } from "lucide-react";
+import { Home as HomeIcon, ListTodo, Users, Music, MessageSquare, Settings, Menu, X, Bell, Brain } from "lucide-react";
 
 
 
@@ -191,10 +191,12 @@ const Sidebar: React.FC<SidebarProps> = ({ className = "" }) => {
     { name: "Home", path: "/home", icon: <HomeIcon size={20} /> },
 
     // Removed Todo as requested
+    
 
     { name: "Members", path: "/members", icon: <Users size={20} /> },
+    { name: "Music", path: "/Music", icon: <Music size={20} /> },
 
-   
+    { name: "AI Task Manager", path: "/ai-task-manager", icon: <Brain size={20} /> },
 
     { name: "AI Chat", path: "/AiChat", icon: <MessageSquare size={20} /> }
 
